@@ -1,0 +1,1 @@
+\(\(panic OR "behavioral therapy"\) AND \(cbt OR "cognitive-behavioral therapy" OR pharmacotherapy OR "social phobia" OR treatment OR "cognitive behavior"\) AND \(anxiety OR exposure OR manual OR "panic disorder" OR predictors OR psychotherapy OR "randomized controlled trial" OR "social anxiety disorder"\)\)

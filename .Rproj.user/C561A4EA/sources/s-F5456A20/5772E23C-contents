@@ -1,0 +1,123 @@
+# -----------------------------------------------------------------------------------#
+#                 APIs - BASE DE DATOS BIBLIOGRAFICA PUBMED                          #       
+# -----------------------------------------------------------------------------------#
+
+my_query <- 'Fundacion Valle del Lili[AD] AND 2018[DP] : 2021[DP]'
+search_topic <- 'Fundacion Valle del Lili[All Fields] AND 2018[DP] : 2021[DP]'
+my_query <- '(Fundación Valle del Lili[Affiliation]) AND (("2021/09"[Date - Publication] : "2021/09"[Date - Publication]))'
+my_query <- 'Fundacion Valle del Lili[Affiliation] AND 2021[DP]'
+my_query <- '(Fundacion Valle del Lili[AD] OR Fundación Valle del Lili[AD] OR Hospsital Universitario Fundacion Valle del Lili[AD] OR Fundacion Clinica Valle Del Lili[AD] OR Valle del Lili Foundation[AD] OR Fundación Valle de Lilly[AD] OR Fundacion Valle de Lily[AD] OR Clinica Valle del Lili[AD] OR Lili Valley Foundation[AD]) AND 2021[DP]'
+my_query <- '(Fundacion Valle del Lili[AD] OR Fundación Valle del Lili[AD]) AND 2021[DP]'
+
+my_query <-  "LILI VALLEY FOUNDATION[Affiliation] OR LILI VALLEY [Affiliation] OR FOUNDATION VALLE DEL LILI [Affiliation] OR  HOSPITAL UNIVERSITARIO FUNDACION VALLE DEL LILI [Affiliation] OR  VALLE DEL LILI FOUNDATION [Affiliation] OR  FUNDACION CLINICA VALLE DEL LILI [Affiliation] OR  CLINICA VALLE DEL LILI [Affiliation] OR  FUNDACION VALLE DEL LILI [Affiliation] OR  VALLE DEL LILI [Affiliation]) AND 2021/08/01:2021/09/01[Date - Publication]"
+my_query <-  "LILI VALLEY FOUNDATION[Affiliation] OR LILI VALLEY [Affiliation] OR FOUNDATION VALLE DEL LILI [Affiliation] OR  HOSPITAL UNIVERSITARIO FUNDACION VALLE DEL LILI [Affiliation] OR  VALLE DEL LILI FOUNDATION [Affiliation] OR  FUNDACION CLINICA VALLE DEL LILI [Affiliation] OR  CLINICA VALLE DEL LILI [Affiliation] OR  FUNDACION VALLE DEL LILI [Affiliation] OR  VALLE DEL LILI [Affiliation])"
+my_query <-  "LILI VALLEY FOUNDATION[Affiliation] OR LILI VALLEY [Affiliation] OR FOUNDATION VALLE DEL LILI [Affiliation] OR  HOSPITAL UNIVERSITARIO FUNDACION VALLE DEL LILI [Affiliation] OR  VALLE DEL LILI FOUNDATION [Affiliation] OR  FUNDACION CLINICA VALLE DEL LILI [Affiliation] OR  CLINICA VALLE DEL LILI [Affiliation] OR  FUNDACION VALLE DEL LILI [Affiliation] OR  VALLE DEL LILI [Affiliation]) AND 2021/01/01:2021/12/31[Date - Publication]"
+
+
+# Funcion 1.
+# -----------------------------------------------------------------------------------
+# https://www.nlm.nih.gov/bsd/mms/medlineelements.html # Sacar los my_query
+library(easyPubMed)
+
+my_entrez_id <- get_pubmed_ids(my_query)
+my_abstracts_xml <- fetch_pubmed_data(pubmed_id_list = my_entrez_id)
+my_titles <- custom_grep(my_abstracts_xml, "ArticleTitle", "char")
+TTM <- nchar(my_titles) > 75
+my_titles[TTM] <- paste(substr(my_titles[TTM], 1, 70), "...", sep = "")
+head(my_titles,10)
+
+
+x <- data.frame(sort(my_titles))
+
+# Funcion 2.
+# -----------------------------------------------------------------------------------
+library(RISmed) 
+search_query <- EUtilsSummary(my_query, retmax=500,
+                              mindate=2021,maxdate=2021)
+summary(search_query)
+QueryId(search_query)
+records<- EUtilsGet(search_query)
+class(records)
+
+pubmed_data <- data.frame('Title'=ArticleTitle(records),
+                          'Abstract'=AbstractText(records))
+head(pubmed_data,1)
+
+pubmed_data$Abstract <- as.character(pubmed_data$Abstract)
+pubmed_data$Abstract <- gsub(",", " ", pubmed_data$Abstract, fixed = TRUE)
+
+
+# Funcion 2.1 Extrayendo otros metadatos
+# -----------------------------------------------------------------------------------
+res1 <- EUtilsSummary(my_query, 
+                      type = "esearch", 
+                      db = "pubmed",
+                      datetype = "pdat",
+                      retmax=500, mindate=2021,maxdate=2021)
+
+fetch <- EUtilsGet(res1, type = "esearch", db = "pubmed")
+abstracts <- data.frame(title = fetch@ArticleTitle,
+                        abstract = fetch@AbstractText, 
+                        journal = fetch@Title,
+                        DOI = fetch@PMID, 
+                        year = fetch@YearPubmed)
+
+
+# Funcion 3.
+# -----------------------------------------------------------------------------------
+library(pubmedR)
+
+D <- pmApiRequest(query = my_query, limit = 500, api_key = NULL)
+M <- pmApi2df(D)
+
+D <- pmQueryTotalCount(query = query, api_key = NULL)
+
+
+######################################################################################
+######################################################################################
+######################################################################################
+
+
+# -----------------------------------------------------------------------------------#
+#                 APIs - BASE DE DATOS BIBLIOGRAFICA SCOPUS                          #       
+# -----------------------------------------------------------------------------------#
+
+library(rscopus)
+#querys
+# https://dev.elsevier.com/sc_search_tips.html
+
+# En este caso, es necesario disponer de una clave de acceso a
+# la API para hacer uso de todas sus funcionalidades.
+# Existen dos opciones para introducir la clave. 
+# En primer lugar introduciéndola como una parámetro 
+# en cada una de las funciones (get_api_key()) o
+# estableciéndola de base en la sesión (set_api_key()).
+
+key <- rscopus::get_api_key(api_key = '55a7bf7ad632cc4889097a542dac4d05')
+rscopus::set_api_key(api_key = '')
+
+# Es posible comprobar si la sesión tiene establecida dicha 
+# clave con la función have_api_key()
+
+rscopus::have_api_key(key)
+
+# Funcion 1.
+# -----------------------------------------------------------------------------------
+
+api_key <- "55a7bf7ad632cc4889097a542dac4d05"
+query_string = 'AFFIL(Fundacion Valle del Lili) AND PUBYEAR = 2021'
+query_string = 'AUTH(Ospina)'
+
+
+s = generic_elsevier_api(query = query_string,
+                         type = "search", 
+                         search_type = "affiliation",
+                         api_key = key,
+                         verbose = FALSE)
+
+scopus_search(query_string, api_key = key)
+
+
+
+
+
